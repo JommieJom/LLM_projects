@@ -3,7 +3,7 @@ import requests
 url = "http://localhost:8000/send_message"
 
 data = {
-    "message": "How many person in db who are male, please handle case sensitive as well",
+    "message": "How many person in db who are male",
     # "db_path": "databases/sleep.db"
 }
 

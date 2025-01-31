@@ -22,7 +22,7 @@ class QueryRequest(BaseModel):
     limit: int = 10
 
 def generate_sql(natural_language: str, schema: str) -> str:
-    """Converts natural language to SQL using GPT-4."""
+    """Converts natural language to SQL using gpt-4o-mini"""
     prompt = f"""
     Convert this natural language query into a **safe** SQL SELECT statement for SQLite.
     Use the following schema:
@@ -33,9 +33,11 @@ def generate_sql(natural_language: str, schema: str) -> str:
     """
     
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are a SQL expert. Return only SQL code."},
+            {"role": "system", "content": "You are a SQL expert. Return only SQL code in text. \
+             Don't return in code snippet,\
+             Handle case sensitive in where using LOWER in every conditions"},
             {"role": "user", "content": prompt}
         ]
     )
@@ -43,7 +45,7 @@ def generate_sql(natural_language: str, schema: str) -> str:
     return response.choices[0].message.content.strip()
 
 def get_schema(db_path: str) -> str:
-    """Fetches SQLite schema as text for GPT-4 processing."""
+    """Fetches SQLite schema as text for processing."""
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -67,6 +69,7 @@ async def process_nl_query(request: MessageRequest):
         schema = get_schema(request.db_path)
         generated_sql = generate_sql(request.message, schema)
         
+        print(f"Debug: Generated SQL = {generated_sql}")
         # Ensure the generated SQL is a SELECT statement (security check)
         if not generated_sql.lower().strip().startswith("select"):
             raise HTTPException(status_code=400, detail="Generated SQL is not a SELECT query.")
